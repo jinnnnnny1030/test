@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>페트병 물 빠짐 시뮬레이션</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #f5f5f5; }
+    canvas { background: #eee; margin-top: 20px; }
+    .controls { margin-top: 20px; }
+    .controls label { margin-right: 10px; }
+  </style>
+</head>
+<body>
+  <h1>💧 페트병 물 빠짐 시뮬레이션</h1>
+
+  <div class="controls">
+    <label>절반 시간 a (초): <input type="range" id="aTime" min="1" max="30" value="5"> <span id="aVal">5</span></label>
+    <br><br>
+    <button id="startBtn">▶ 시작</button>
+    <button id="resetBtn">⏹ 초기화</button>
+  </div>
+
+  <canvas id="bottleCanvas" width="200" height="400"></canvas>
+  <div id="status">⏱ 시간: 0.00초 | 현재 높이: 20.0cm</div>
+
+  <script>
+    const canvas = document.getElementById("bottleCanvas");
+    const ctx = canvas.getContext("2d");
+    const startBtn = document.getElementById("startBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const aTime = document.getElementById("aTime");
+    const aVal = document.getElementById("aVal");
+    const status = document.getElementById("status");
+
+    let animationId = null;
+    let time = 0;
+    let height = 0;
+    let H0 = 0.2; 
+    let a, k;
+    const dt = 0.05;
+    const pxPerMeter = 1800;
+
+    function updateLabels() {
+      aVal.textContent = aTime.value;
+    }
+
+    aTime.oninput = updateLabels;
+
+    function resetSimulation() {
+      cancelAnimationFrame(animationId);
+      updateLabels();
+
+      a = parseFloat(aTime.value);
+      k = (2 / a) * (Math.sqrt(H0) - Math.sqrt(H0 / 2));
+      height = H0;
+      time = 0;
+
+      drawBottle(height * pxPerMeter);
+      status.textContent = `⏱ 시간: 0.00초 | 현재 높이: ${(height * 100).toFixed(1)}cm`;
+    }
+
+    function drawBottle(waterHeightPx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const totalHeightPx = H0 * pxPerMeter;
+
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(50, 20, 100, totalHeightPx);
+      ctx.fillStyle = "skyblue";
+      ctx.fillRect(50, 20 + (totalHeightPx - waterHeightPx), 100, waterHeightPx);
+    }
+
+    function animate() {
+      if (height <= 0) {
+        status.textContent = `✅ 완료! 총 시간: ${time.toFixed(2)}초`;
+        return;
+      }
+
+      const dHeight = -k * Math.sqrt(height) * dt;
+      height += dHeight;
+      height = Math.max(height, 0);
+      time += dt;
+
+      const waterHeightPx = height * pxPerMeter;
+      drawBottle(waterHeightPx);
+      status.textContent = `⏱ 시간: ${time.toFixed(2)}초 | 현재 높이: ${(height * 100).toFixed(1)}cm`;
+
+      animationId = requestAnimationFrame(animate);
+    }
+
+    startBtn.onclick = () => {
+      cancelAnimationFrame(animationId);
+      requestAnimationFrame(animate);
+    };
+
+    resetBtn.onclick = resetSimulation;
+    resetSimulation();
+  </script>
+</body>
+</html>
+
+
